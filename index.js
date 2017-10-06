@@ -1,7 +1,7 @@
 /*
 MIT License
 
-Copyright (c) 2017 Jeff Bennett
+Copyright (c) 2017
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -48,7 +48,6 @@ function main() {
     var timeStamp = new Date().toISOString();
     var loginCookie;
     var startTime, endTime;
-    var test = getProcessVariable("AeroqualPassword");
     //var outputLogs = (process.env.OutputLogs == true);
     var outputLogs = true;
 
@@ -93,7 +92,7 @@ function main() {
                     },
                     function(deviceId, serialData, deviceInfo, deviceImportCB) {
                         if (serialData.data == null) {
-                            throw Error(serialData);
+                            deviceImportCB("No serial data returned.");
                         } else {
                             if (serialData.data.length == 0) {
                                 if (outputLogs) { console.log("#5 - No data to upload for ".concat(deviceId).concat(" - Skipping Upload")); }
@@ -141,29 +140,23 @@ function getDeviceIoTHubConnectionString(deviceId, key) {
     return "HostName=".concat(hostName).concat(";DeviceId=").concat(deviceId).concat(";SharedAccessKey=").concat(key);
 }
 
-if (Date.prototype.toISOString) {
-    (function() {
-  
-      function pad(number) {
-        if (number < 10) {
-          return '0' + number;
-        }
-        return number;
-      }
-
-      Date.prototype.toISOString = function() {
-        this.setHours(this.getHours() - 1);
-        return this.getFullYear() +
-          '-' + pad(this.getMonth() + 1) +
-          '-' + pad(this.getDate()) +
-          'T' + pad(this.getHours()) +
-          ':' + pad(this.getMinutes()) +
-          ':' + pad(this.getSeconds()) +
-          '.' + (this.getMilliseconds() / 1000).toFixed(3).slice(2, 5);
-      };
-  
-    }());
+function pad(number) {
+    if (number < 10) {
+      return '0' + number;
+    }
+    return number;
   }
+
+function getAQMDDateString(dateTimeValue) {
+    dateTimeValue.setHours(dateTimeValue.getHours() - 1); // Currently assuming we're in PDT and need to adjust for PST
+    return dateTimeValue.getFullYear() +
+      '-' + pad(dateTimeValue.getMonth() + 1) +
+      '-' + pad(dateTimeValue.getDate()) +
+      'T' + pad(dateTimeValue.getHours()) +
+      ':' + pad(dateTimeValue.getMinutes()) +
+      ':' + pad(dateTimeValue.getSeconds()) +
+      '.' + (dateTimeValue.getMilliseconds() / 1000).toFixed(3).slice(2, 5);
+};
 
 function login(callback) {
 
@@ -189,8 +182,6 @@ function login(callback) {
     };
       
     const req = http.request(options, (res) => {
-        //console.log(`STATUS: ${res.statusCode}`);
-        //console.log(`HEADERS: ${JSON.stringify(res.headers)}`);
         res.setEncoding('utf8');
 
         res.on('data', (chunk) => {
@@ -257,7 +248,7 @@ function getDeviceData(cookie, serial, starttime, endtime, asyncCB, callback) {
 
     var url = getProcessVariable("AeroqualAPIUrl");
     var data = "";
-    var path = "/api/data/" + serial + "?from=" + starttime.toISOString() + "&to=" + endtime.toISOString() + 
+    var path = "/api/data/" + serial + "?from=" + getAQMDDateString(starttime) + "&to=" + getAQMDDateString(endtime) + 
             "&averagingperiod=1&includejournal=false";
       
     const options = {
@@ -272,8 +263,6 @@ function getDeviceData(cookie, serial, starttime, endtime, asyncCB, callback) {
     };
       
     const req = http.request(options, (res) => {
-        //console.log(`STATUS: ${res.statusCode}`);
-        //console.log(`HEADERS: ${JSON.stringify(res.headers)}`);
         res.setEncoding('utf8');
 
         res.on('data', (chunk) => {
@@ -329,7 +318,6 @@ function registerDeviceWithIoTHub(deviceId, callback) {
         if (err) {
             registry.get(device.deviceId, function registryGetHandler(err, deviceInfo, res) {
                 if (deviceInfo) {
-                    //deviceToRegister.deviceKey = deviceInfo.authentication.SymmetricKey.primaryKey;
                     return callback(deviceInfo);
                 }
                 return callback(null);

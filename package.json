@@ -1,0 +1,19 @@
+{
+  "name": "aeroqualapiclient",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "async": "^2.5.0",
+    "azure-iot-device": "^1.1.18",
+    "azure-iot-device-amqp": "^1.1.18",
+    "azure-iot-device-http": "^1.1.18",
+    "azure-iothub": "^1.1.16",
+    "dotenv": "^4.0.0"
+  }
+}
